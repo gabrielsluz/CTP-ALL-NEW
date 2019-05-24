@@ -1,0 +1,103 @@
+#define INIT_TIME 1000
+#define FINISH_TIME 60000
+
+module TestCtpC {
+  uses{
+    interface Boot;
+
+    interface Timer<TMilli> as InitTimer;
+    interface Timer<TMilli> as FinishTimer;
+    interface Timer<TMilli> as RootTimer;
+    interface Timer<TMilli> as NotRootTimer;
+
+    interface SplitControl as SerialControl;
+    interface SplitControl as RadiosControl;
+    interface StdControl as CtpRouteControl;
+
+		interface SerialLogger;
+
+
+    interface RootControl;
+    interface CtpInfo;
+    interface CollectionPacket;
+    interface Receive;
+    interface Intercept;
+    interface Send;
+
+  }
+
+
+}
+
+
+implementation {
+
+	bool is_root;
+
+	void initializeNode(){
+    call SerialLogger.log(LOG_INITIALIZED, TOS_NODE_ID);
+
+    call RootTimer.startPeriodicAt(1000, 1000);
+    call NotRootTimer.startPeriodicAt(1500,1000);
+    call FinishTimer.startOneShot(FINISH_TIME);
+
+  }
+
+  event void Boot.booted(){
+    call SerialControl.start();
+  }
+
+  event void SerialControl.startDone(error_t err) {
+    if (err != SUCCESS) {
+      call SerialControl.start();
+    } else {
+      call RadiosControl.start();
+    }
+  }
+
+  event void SerialControl.stopDone(error_t err) {}
+
+  event void RadiosControl.startDone(error_t error) {
+    if (error != SUCCESS) {
+      call RadiosControl.start();
+    } else {
+      call CtpRouteControl.start();
+      call InitTimer.startOneShot(INIT_TIME);
+    }
+  }
+
+	event void RadiosControl.stopDone(error_t err) {}
+
+
+
+  event void InitTimer.fired() {
+    initializeNode();
+  }
+
+	event bool Intercept.forward(message_t *msg, void *payload, uint8_t len) {}
+
+	event void Send.sendDone(message_t *msg, error_t error) {}
+
+	event message_t * Receive.receive(message_t *msg, void *payload, uint8_t len) {}
+
+  event void RootTimer.fired(){
+    call RootControl.setRoot();
+    is_root = call RootControl.isRoot();
+		call SerialLogger.log(LOG_ROOT,is_root);
+  }
+	
+	event void NotRootTimer.fired(){
+		call RootControl.unsetRoot();
+		is_root = call RootControl.isRoot();
+		call SerialLogger.log(LOG_NOT_ROOT,is_root);
+
+	}
+
+  event void FinishTimer.fired(){
+    call RootTimer.stop();
+    call NotRootTimer.stop();
+		call SerialLogger.log(LOG_FINISH,TOS_NODE_ID);
+  }
+
+}
+
