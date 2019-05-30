@@ -6,6 +6,7 @@ CFLAGS += -I../mpdr
 CFLAGS += -I../ctp
 CFLAGS += -I../4bitle
 CFLAGS += -I../RSControl
+CFLAGS += -I../ACK
 CFLAGS += -I$(TOSDIR)/lib/net
 
 

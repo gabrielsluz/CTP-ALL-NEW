@@ -100,4 +100,6 @@ interface CtpInfo {
   command uint16_t current_dad();
   command uint8_t current_radio();
   command uint32_t totalBeacons();
+  command async uint8_t current_radio_async();
+  command async void postForceUpdate();
 }

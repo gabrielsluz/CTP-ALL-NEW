@@ -2,7 +2,7 @@
 #define FINISH_TIME 250000
 
 #define NUM_MSGS 2000
-#define SEND_PERIOD 500
+#define SEND_PERIOD 4000
 #define SEND_DELAY 5000
 
 
